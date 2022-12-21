@@ -10,6 +10,7 @@ from map import Map
 st.set_page_config(
     page_title="Basic fit Dashboard",
     layout="wide",
+    #page_icon=st.image("https://www.promenadesdebretigny.fr/wp-content/uploads/2019/06/basic-fit.png")
 )
 
 st.title("Dashboard Basic-fit")
@@ -39,18 +40,18 @@ st.plotly_chart(
         df.groupby("club").size().to_frame().rename(
             columns={0 : "visites"}
             ).sort_values("visites", ascending=False).query("visites>2"), y="visites", text_auto=True,
-            title = "Top des basic-fit les plus visités"
+            title = "Top des basic-fit les plus visités", color_discrete_sequence=["black"]
             ), use_container_width=True
 )
 
 col1, col2 = st.columns(2)
-col1.write("Entrainements les plus tôts :")
+col1.write("**Entrainements les plus tôts :**")
 col1.dataframe(
     df.sort_values(
         "date", key=lambda x: x.map(lambda x: x.time()),ascending=True
     ).head(3)
 )
-col2.write("Entrainements les plus tardifs :")
+col2.write("**Entrainements les plus tardifs :**")
 col2.dataframe(
     df.sort_values(
         "date", key=lambda x: x.map(lambda x: x.time()),ascending=False
@@ -61,30 +62,24 @@ st.plotly_chart(
     px.bar(df.groupby("dow").count().rename(
         columns={"club" : "nb_training"}
         ).loc[["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],:],
-        y="nb_training", text_auto=True, title= "Entraînements par jour de la semaine"
+        y="nb_training", text_auto=True, title= "Entraînements par jour de la semaine",
+        color_discrete_sequence = ["black"]*7
     ), use_container_width=True
 )
 
-#Histogramme du nbr entraînement par heure la semaine
+#Histogramme du nbr entraînement par heure la semaine et le week end
+
 st.plotly_chart(
-    px.bar(
-        df.query("dow != ['Saturday', 'Sunday']")[["club"]].groupby(lambda x: x.hour).count().rename(columns={
-            "club": "nombre d'entraînements"
-            }).rename_axis("Heure"),
-        y="nombre d'entraînements", text_auto=True, title= "Entraînements par heure en semaine"
-        ), use_container_width=True
+    px.histogram(
+        df.assign(we=[i*"Week-end"+(not i)*"Semaine" for i in list(df["dow"].isin(['Saturday', 'Sunday']))]).set_index(
+            df.index.hour
+        ).reset_index(names="hour").groupby(["hour","we"]).size().to_frame(name="count").reset_index(),
+        x="hour", y="count", text_auto=True, title= "Entraînements par heure le week-end ou la semaine",
+        color="we", barmode="group", nbins=17, color_discrete_map={"Semaine": "orange", "Week-end": "black"}, labels={"hour": "Heure", "we": ""}
+        ).update_layout(yaxis_title="Nombre d'entraînements"), use_container_width=True
 )
 
-#Histogramme du nbr entraînement par heure le week end
-st.plotly_chart(
-    px.bar(
-        df.query("dow == ['Saturday', 'Sunday']")[["club"]].groupby(lambda x: x.hour).count().rename(columns={
-            "club": "nombre d'entraînements"
-            }).rename_axis("Heure"),
-        y="nombre d'entraînements", text_auto=True, title= "Entraînements par heure le week end"
-        ), use_container_width=True
-)
-
+st.cache()
 mapper=Map()
 result = mapper.map(df["club"].unique().tolist())
 #Affichage des basic fit non placés
