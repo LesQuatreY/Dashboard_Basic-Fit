@@ -18,7 +18,8 @@ class Map:
       try:
         folium.Marker(
           list(geocoding(address).values()), popup=address, icon=folium.features.CustomIcon(
-            "https://res.cloudinary.com/crunchbase-production/image/upload/c_lpad,h_256,w_256,f_auto,q_auto:eco,dpr_1/v1397184778/d8d5e0a2089418bbf5d7a28b5f7ba982.png",
+            "https://www.promenadesdebretigny.fr/wp-content/uploads/2019/06/basic-fit.png",
+            #"https://res.cloudinary.com/crunchbase-production/image/upload/c_lpad,h_256,w_256,f_auto,q_auto:eco,dpr_1/v1397184778/d8d5e0a2089418bbf5d7a28b5f7ba982.png",
             icon_size=(50, 35)
             )
         ).add_to(self.carte)
