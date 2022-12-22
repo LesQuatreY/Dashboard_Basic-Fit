@@ -16,17 +16,26 @@ st.set_page_config(
 st.title("Dashboard Basic-fit")
 
 #Sidebar
-file = st.sidebar.file_uploader("Importer votre fichier Basic fit :")
+file = st.sidebar.file_uploader(":orange[Importer votre fichier Basic fit :]")
+#file = st.sidebar.file_uploader("$$\color{white} Importer votre fichier Basic fit :$$")
 if file is None: 
     st.info("Importer votre fichier BasicFit dans la barre latéral à gauche")
     st.stop() 
-else: st.sidebar.success("Fichier correctement importé")
+else: 
+    try:
+        df = pd.DataFrame(json.load(file)["visits"]).assign(date=lambda x: x.date + " " + x.time).drop(
+                "time", axis=1
+            ).astype({"date": "datetime64"}).set_index("date").assign(
+                club=lambda x: x.club.str.lstrip("Basic-Fit")
+            ).assign(dow= lambda x: x.index.day_name())
+        st.sidebar.success("Fichier correctement importé")
+    except:
+        st.error(
+            "Mauvais fichier importé. Veuiller importer le fichier json de l'application basic-fit/mes données."
+            )
+        st.sidebar.error("Erreur dans l'importation du fichier !")
+        st.stop()
 
-df = pd.DataFrame(json.load(file)["visits"]).assign(date=lambda x: x.date + " " + x.time).drop(
-        "time", axis=1
-      ).astype({"date": "datetime64"}).set_index("date").assign(
-        club=lambda x: x.club.str.lstrip("Basic-Fit")
-      ).assign(dow= lambda x: x.index.day_name())
 
 col1, col2, col3 = st.columns(3)
 col1.metric(label="Nombre d'entraînements", value=df.shape[0])
@@ -79,7 +88,6 @@ st.plotly_chart(
         ).update_layout(yaxis_title="Nombre d'entraînements"), use_container_width=True
 )
 
-st.cache()
 mapper=Map()
 result = mapper.map(df["club"].unique().tolist())
 #Affichage des basic fit non placés
@@ -88,4 +96,8 @@ if result[1]:
         st.write(erreur)
 #Affichage de la carte
 markdown("Points de tous les basic-fit visités",size="20px")
-folium_static(result[0])
+def print_map(map):
+    from streamlit_folium import st_folium
+    st_folium(map, width=650, height=650)
+
+print_map(result[0])
