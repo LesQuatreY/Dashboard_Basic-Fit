@@ -16,20 +16,25 @@ st.set_page_config(
 )
 
 #Fond orange
-html_body = '''
+st.markdown(
+    """
 <style>
-body{
-  background-color: orange;
+[data-testid="stAppViewContainer"]{
+    background-image: url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaQLH29dRw9kQpyvPUJJRfHy6PGk-G-ZqwVDWKjz2HeFAJmDnaBsvq1TjvPal01rTvmUs&usqp=CAU");
+    background-size: cover;
 }
-</style>
-'''
-st.markdown(html_body, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
+
+ChatGPT
+Sur mon application streamlit, mon fond est orange. Je trace différents graphiques plotly. Les graphiques ont un encadré blanc, est il possible qu'ils n'est pas d'encadrés ?
 
 #Affichage d'un titre
 st.title("Basic fit Dashboard")
 
 #Sidebar
-file = st.sidebar.file_uploader(":orange[Importer votre fichier Basic fit :]")
+file = st.sidebar.file_uploader("Importer votre fichier Basic fit :")
 
 if file: 
     try:
