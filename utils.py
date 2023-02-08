@@ -6,12 +6,12 @@ def markdown(text, center=False, size="30px", color=None, sidebar=False):
     import streamlit as st
     text_to_center = ("<div style='text-align:center';>", "</div>") if center else ("", "")
     if sidebar:
-        st.sidebar.markdown(
+        return st.sidebar.markdown(
             f"{text_to_center[0]}<span style='font-size:{size};color:{color};'>{text}</span>{text_to_center[1]}",
             unsafe_allow_html=True
         )
     else:
-        st.markdown(
+        return st.markdown(
             f"{text_to_center[0]}<span style='font-size:{size};color:{color};'>{text}</span>{text_to_center[1]}",
             unsafe_allow_html=True
         )

@@ -4,10 +4,10 @@ from utils import geocoding
 
 class Map:
   def __init__(self):
-    fond = r'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+    fond = r'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png'
     self.carte = folium.Map(
       location=[46.5, 2.3],
-      zoom_start=5.2, 
+      zoom_start=6, 
       tiles=fond, 
       attr='© OpenStreetMap © CartoDB'
       )
@@ -19,7 +19,6 @@ class Map:
         folium.Marker(
           list(geocoding(address).values()), popup=address, icon=folium.features.CustomIcon(
             "https://www.promenadesdebretigny.fr/wp-content/uploads/2019/06/basic-fit.png",
-            #"https://res.cloudinary.com/crunchbase-production/image/upload/c_lpad,h_256,w_256,f_auto,q_auto:eco,dpr_1/v1397184778/d8d5e0a2089418bbf5d7a28b5f7ba982.png",
             icon_size=(50, 35)
             )
         ).add_to(self.carte)

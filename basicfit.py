@@ -3,46 +3,61 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 from utils import (markdown)
 from map import Map
 
+# Afficher l'image avec st.image
 st.set_page_config(
     page_title="Basic fit Dashboard",
-    layout="wide",
-    #page_icon=st.image("https://www.promenadesdebretigny.fr/wp-content/uploads/2019/06/basic-fit.png")
+    layout="centered",
+    initial_sidebar_state="expanded",
+    page_icon="https://companieslogo.com/img/orig/BFIT.AS-f0360106.png?t=1664515365"
 )
 
-st.title("Dashboard Basic-fit")
+#Fond orange
+html_body = '''
+<style>
+body{
+  background-color: orange;
+}
+</style>
+'''
+st.markdown(html_body, unsafe_allow_html=True)
+
+#Affichage d'un titre
+st.title("Basic fit Dashboard")
 
 #Sidebar
 file = st.sidebar.file_uploader(":orange[Importer votre fichier Basic fit :]")
-#file = st.sidebar.file_uploader("$$\color{white} Importer votre fichier Basic fit :$$")
-if file is None: 
-    st.info("Importer votre fichier BasicFit dans la barre latéral à gauche")
-    st.stop() 
-else: 
+
+if file: 
     try:
-        df = pd.DataFrame(json.load(file)["visits"]).assign(date=lambda x: x.date + " " + x.time).drop(
-                "time", axis=1
-            ).astype({"date": "datetime64"}).set_index("date").assign(
-                club=lambda x: x.club.str.lstrip("Basic-Fit")
-            ).assign(dow= lambda x: x.index.day_name())
+        json_data = json.load(file)
+        visits = json_data["visits"]
+        df = pd.DataFrame(visits).assign(
+            date=lambda x: x["date"] + " " + x["time"],
+            club=lambda x: x.club.str.lstrip("Basic-Fit"),
+            dow=lambda x: pd.to_datetime(x["date"]).dt.day_name()
+        ).drop(["time"], axis=1).astype({"date": "datetime64"}).set_index("date")
+
         st.sidebar.success("Fichier correctement importé")
     except:
-        st.error(
-            "Mauvais fichier importé. Veuiller importer le fichier json de l'application basic-fit/mes données."
-            )
+        st.error("Mauvais fichier importé. Veuillez importer le fichier json de l'application basic-fit/mes données.")
         st.sidebar.error("Erreur dans l'importation du fichier !")
         st.stop()
+else: 
+    st.info("Importer votre fichier BasicFit dans la barre latéral à gauche.")
+    st.stop() 
 
-
+#KPI's sur les entraînements
 col1, col2, col3 = st.columns(3)
 col1.metric(label="Nombre d'entraînements", value=df.shape[0])
 col2.metric(label="Nombre de basic-fit différents", value=len(df["club"].unique()))
 close_days = (pd.to_datetime("2021-06-09") - pd.to_datetime("2020-10-29")).days
 col3.metric(label="Nombre d'entraînements par semaine", value=round(7/(((df.index[0] - df.index[-1]).days-close_days)/(df.shape[0]+10)), 2))
 
+#Top des basic-fit les plus visités
 st.write("\n")
 st.plotly_chart(
     px.bar(
@@ -53,6 +68,7 @@ st.plotly_chart(
             ), use_container_width=True
 )
 
+#Entraînements selon l'heure
 col1, col2 = st.columns(2)
 col1.write("**Entrainements les plus tôts :**")
 col1.dataframe(
@@ -67,6 +83,7 @@ col2.dataframe(
     ).head(3)
 )
 
+#Entraînements par jour de la semaine
 st.plotly_chart(
     px.bar(df.groupby("dow").count().rename(
         columns={"club" : "nb_training"}
@@ -77,7 +94,6 @@ st.plotly_chart(
 )
 
 #Histogramme du nbr entraînement par heure la semaine et le week end
-
 st.plotly_chart(
     px.histogram(
         df.assign(we=[i*"Week-end"+(not i)*"Semaine" for i in list(df["dow"].isin(['Saturday', 'Sunday']))]).set_index(
@@ -90,14 +106,12 @@ st.plotly_chart(
 
 mapper=Map()
 result = mapper.map(df["club"].unique().tolist())
-#Affichage des basic fit non placés
+
+#Affichage des basic fit non placés (si necessaire)
 if result[1]:
     for erreur in result[1]:
         st.write(erreur)
-#Affichage de la carte
-markdown("Points de tous les basic-fit visités",size="20px")
-def print_map(map):
-    from streamlit_folium import st_folium
-    st_folium(map, width=650, height=650)
 
-print_map(result[0])
+#Affichage de la carte
+markdown("Points de tous les basic-fit visités",size="20px",center=True)
+st_folium(result[0], returned_objects=[""], height=650, width=1400)
