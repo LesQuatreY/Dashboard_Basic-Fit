@@ -4,15 +4,22 @@ import streamlit as st
 import plotly.express as px
 
 from streamlit_folium import st_folium
-from utils import (markdown)
+from utils import (markdown, geocoding)
 from map import Map
 
-# Afficher l'image avec st.image
+# """
+# Configuration de la page princiaple initiale
+# """
+#Paramètres de la page
 st.set_page_config(
     page_title="Basic fit Dashboard",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded",
-    page_icon="https://companieslogo.com/img/orig/BFIT.AS-f0360106.png?t=1664515365"
+    page_icon="https://companieslogo.com/img/orig/BFIT.AS-f0360106.png?t=1664515365",
+    menu_items={
+    'Get Help': 'mailto:tanguy.minot@laposte.net',
+    'About': "Dashboard by Tanguy Minot!"
+    }
 )
 
 #Fond orange
@@ -27,15 +34,53 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-ChatGPT
-Sur mon application streamlit, mon fond est orange. Je trace différents graphiques plotly. Les graphiques ont un encadré blanc, est il possible qu'ils n'est pas d'encadrés ?
+#Fond avec des haltères
+st.markdown(
+    """
+<style>
+[data-testid="stSidebar"]{
+    background-image: url("https://i.pinimg.com/originals/de/e6/da/dee6da39b926de9739c11409920a353b.jpg");
+    background-size: 165%;
+    background-position: 48% 52%;
+    background-attachment: local;
+    background-color: #FD7605;
+}
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown(
+    """
+<style>
+[data-testid="stHeader"]{
+    background-image: url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQaQLH29dRw9kQpyvPUJJRfHy6PGk-G-ZqwVDWKjz2HeFAJmDnaBsvq1TjvPal01rTvmUs&usqp=CAU");
+    background-size: cover;
+}
+    """,
+    unsafe_allow_html=True,
+)
+
+#Fond du message dans la sidebar
+st.markdown(
+    """
+<style>
+[class="stAlert"]{
+    background-color: #FFFFFF;
+}
+    """,
+    unsafe_allow_html=True,
+)
 
 #Affichage d'un titre
 st.title("Basic fit Dashboard")
 
-#Sidebar
-file = st.sidebar.file_uploader("Importer votre fichier Basic fit :")
+# """
+# Configuration de la side page
+# """
 
+#Initialisation de la sidebar
+file = st.sidebar.file_uploader("**Importer votre fichier Basic fit :**")
+
+#Importation du fichier utilisateur
 if file: 
     try:
         json_data = json.load(file)
@@ -53,8 +98,11 @@ if file:
         st.stop()
 else: 
     st.info("Importer votre fichier BasicFit dans la barre latéral à gauche.")
-    st.stop() 
+    st.stop()
 
+# """
+# Création des différents dash
+# """
 #KPI's sur les entraînements
 col1, col2, col3 = st.columns(3)
 col1.metric(label="Nombre d'entraînements", value=df.shape[0])
@@ -68,24 +116,44 @@ st.plotly_chart(
     px.bar(
         df.groupby("club").size().to_frame().rename(
             columns={0 : "visites"}
-            ).sort_values("visites", ascending=False).query("visites>2"), y="visites", text_auto=True,
-            title = "Top des basic-fit les plus visités", color_discrete_sequence=["black"]
-            ), use_container_width=True
+            ).sort_values("visites", ascending=False).query("visites>=5"), 
+        y="visites", text_auto=True, title = "Top des basic-fit les plus visités", 
+        color_discrete_sequence=["black"]
+    ).update_layout(
+        plot_bgcolor="rgba(0, 0, 0, 0)", 
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        xaxis_title=dict(font=dict(color='black')),
+        xaxis=dict(tickfont=dict(color='black'), title=dict(font=dict(color='black'))),
+        yaxis=dict(tickfont=dict(color='black'), title=dict(font=dict(color='black')))
+    ).update_traces(textposition='auto', textfont=dict(color='white')),
+    use_container_width=True
 )
 
-#Entraînements selon l'heure
+#Entraînements les plus tardif et les plus tôt.
 col1, col2 = st.columns(2)
 col1.write("**Entrainements les plus tôts :**")
-col1.dataframe(
+col1.write(
     df.sort_values(
         "date", key=lambda x: x.map(lambda x: x.time()),ascending=True
-    ).head(3)
+    ).head(3).style.set_table_styles(
+        [{
+            'selector': 'table',
+            'props': [('background-color', 'transparent')]
+        }]
+    ).render(),
+    unsafe_allow_html=True
 )
 col2.write("**Entrainements les plus tardifs :**")
-col2.dataframe(
+col2.write(
     df.sort_values(
         "date", key=lambda x: x.map(lambda x: x.time()),ascending=False
-    ).head(3)
+    ).head(3).style.set_table_styles(
+        [{
+            'selector': 'table',
+            'props': [('background-color', 'transparent')]
+        }]
+    ).render(),
+    unsafe_allow_html=True
 )
 
 #Entraînements par jour de la semaine
@@ -95,7 +163,14 @@ st.plotly_chart(
         ).loc[["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],:],
         y="nb_training", text_auto=True, title= "Entraînements par jour de la semaine",
         color_discrete_sequence = ["black"]*7
-    ), use_container_width=True
+    ).update_layout(
+    { "plot_bgcolor": "rgba(0, 0, 0, 0)", "paper_bgcolor": "rgba(0, 0, 0, 0)", 
+      "xaxis_title": dict(text="Nombre d'entraînements", font=dict(color='black')),
+      "yaxis_title": dict(text="Jour de la semaine", font=dict(color='black')),
+      "xaxis": dict(tickfont=dict(color='black'), title=dict(font=dict(color='black'))),
+      "yaxis": dict(tickfont=dict(color='black'), title=dict(font=dict(color='black')))
+    }
+),use_container_width=True
 )
 
 #Histogramme du nbr entraînement par heure la semaine et le week end
@@ -106,9 +181,28 @@ st.plotly_chart(
         ).reset_index(names="hour").groupby(["hour","we"]).size().to_frame(name="count").reset_index(),
         x="hour", y="count", text_auto=True, title= "Entraînements par heure le week-end ou la semaine",
         color="we", barmode="group", nbins=17, color_discrete_map={"Semaine": "orange", "Week-end": "black"}, labels={"hour": "Heure", "we": ""}
-        ).update_layout(yaxis_title="Nombre d'entraînements"), use_container_width=True
+    ).update_layout(
+        { 
+            "plot_bgcolor": "rgba(0, 0, 0, 0)", 
+            "paper_bgcolor": "rgba(0, 0, 0, 0)", 
+            "xaxis_title": {"font": {"color": "black"}},
+            "xaxis": {
+                "tickfont": {"color": "black"}, 
+                "title": {"font": {"color": "black"}}
+            },
+            "yaxis": {
+                "tickfont": {"color": "black"}, 
+                "title": {
+                    "text": "Nombre d'entraînements", 
+                    "font": {"color": "black"}
+                }
+            }
+        }
+    ).update_traces(textposition='auto', textfont=dict(color='white')),
+    use_container_width=True
 )
 
+#Affichage de la carte de tous les basic fit visités
 mapper=Map()
 result = mapper.map(df["club"].unique().tolist())
 
@@ -119,4 +213,4 @@ if result[1]:
 
 #Affichage de la carte
 markdown("Points de tous les basic-fit visités",size="20px",center=True)
-st_folium(result[0], returned_objects=[""], height=650, width=1400)
+st_folium(result[0], returned_objects=[""]) #, width=800, height=600)
